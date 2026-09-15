@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "GestureReel",
+  "version": "1.0.0",
+  "description": "Control short-form videos with private, local hand gestures.",
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
+  "host_permissions": ["https://www.youtube.com/*", "https://youtube.com/*", "https://www.instagram.com/*", "https://instagram.com/*", "https://www.facebook.com/*", "https://facebook.com/*"],
+  "action": {
+    "default_title": "GestureReel",
+    "default_popup": "popup/popup.html"
+  },
+  "background": { "service_worker": "background/service-worker.js" },
+  "web_accessible_resources": [
+    {
+      "resources": ["vendor/mediapipe/hands/*"],
+      "matches": ["https://www.youtube.com/*", "https://youtube.com/*", "https://www.instagram.com/*", "https://instagram.com/*", "https://www.facebook.com/*", "https://facebook.com/*"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*", "https://youtube.com/*", "https://www.instagram.com/*", "https://instagram.com/*", "https://www.facebook.com/*", "https://facebook.com/*"],
+      "js": ["gesture/asset-bridge.js",
+        "utils/storage.js",
+        "content/youtube.js",
+        "content/instagram.js",
+        "content/facebook.js",
+        "content/platformDetector.js",
+        "gesture/gestureDetector.js",
+        "vendor/mediapipe/hands/hands_solution_packed_assets_loader.js",
+        "vendor/mediapipe/hands/hands_solution_simd_wasm_bin.js",
+        "vendor/mediapipe/hands/hands_solution_wasm_bin.js",
+        "vendor/mediapipe/hands/hands.js",
+        "gesture/handTracker.js",
+        "gesture/camera.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {}
+}

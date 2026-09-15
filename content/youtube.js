@@ -1,0 +1,81 @@
+class YouTubeController {
+  get name() { return 'YouTube Shorts'; }
+  isSupported() { return location.hostname.endsWith('youtube.com') && location.pathname.startsWith('/shorts/'); }
+  getVideo() {
+    const activeRenderer = document.querySelector('ytd-reel-video-renderer[is-active]');
+    if (activeRenderer) {
+      const activeVideo = activeRenderer.querySelector('video');
+      if (activeVideo) return activeVideo;
+    }
+    const videos = [...document.querySelectorAll('video')]
+      .filter(video => !video.closest('#gesturereel-camera'))
+      .map(video => ({ video, rect: video.getBoundingClientRect() }))
+      .filter(({ rect }) => rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight)
+      .sort((first, second) => (second.rect.width * second.rect.height) - (first.rect.width * first.rect.height))
+      .map(({ video }) => video);
+    return videos.find(video => !video.paused) || videos[0] || document.querySelector('ytd-shorts video, video:not(#gesturereel-camera video)');
+  }
+  nextVideo() {
+    const nextButton = [...document.querySelectorAll([
+      'ytd-shorts #navigation-button-down button',
+      'ytd-shorts button[aria-label*="Next" i]',
+      'button[aria-label*="Next video" i]',
+      'button[title*="Next" i]'
+    ].join(','))].find(button => !button.disabled && button.getAttribute('aria-disabled') !== 'true' && button.offsetParent !== null);
+    if (nextButton) { nextButton.click(); return true; }
+    const currentRenderer = document.querySelector('ytd-reel-video-renderer[is-active], ytd-reel-video-renderer:has(video)');
+    const renderers = [...document.querySelectorAll('ytd-reel-video-renderer')];
+    const nextRenderer = currentRenderer && renderers[renderers.indexOf(currentRenderer) + 1];
+    if (nextRenderer) { nextRenderer.scrollIntoView({ behavior: 'smooth', block: 'center' }); return true; }
+    const shortsContainer = document.querySelector('#shorts-container, ytd-shorts');
+    if (shortsContainer?.scrollBy) { shortsContainer.scrollBy({ top: window.innerHeight, behavior: 'smooth' }); return true; }
+    const eventTarget = document.activeElement || document.body;
+    eventTarget.dispatchEvent(new WheelEvent('wheel', { deltaY: window.innerHeight, bubbles: true, cancelable: true }));
+    window.scrollBy({ top: window.innerHeight, behavior: 'instant' });
+    eventTarget.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', code: 'ArrowDown', bubbles: true }));
+    return true;
+  }
+  likeVideo() {
+    const activeRenderer = document.querySelector('ytd-reel-video-renderer[is-active]');
+    const root = activeRenderer || document;
+    
+    // Dedicated like containers first
+    const dedicatedContainer = root.querySelector('#like-button, ytd-like-button-renderer, like-button-view-model');
+    let likeButton = dedicatedContainer?.querySelector('button');
+
+    if (!likeButton) {
+      const buttons = [...root.querySelectorAll('button')];
+      likeButton = buttons.find(b => {
+        const label = (b.getAttribute('aria-label') || b.getAttribute('title') || '').trim().toLowerCase();
+        return label.includes('like') && !label.includes('dislike');
+      });
+    }
+
+    if (likeButton) {
+      const isAlreadyLiked = likeButton.getAttribute('aria-pressed') === 'true' || 
+                             likeButton.closest('like-button-view-model')?.getAttribute('aria-pressed') === 'true';
+      if (!isAlreadyLiked) {
+        likeButton.click();
+      }
+      return true;
+    }
+    return false;
+  }
+  togglePlay() {
+    const video = this.getVideo();
+    if (!video) return false;
+    if (video.paused) {
+      video.play().catch(() => {
+        const activeRenderer = document.querySelector('ytd-reel-video-renderer[is-active]');
+        const root = activeRenderer || document;
+        const playBtn = root.querySelector('button[aria-label*="Play" i], .ytp-play-button');
+        if (playBtn) playBtn.click();
+        else video.click();
+      });
+      return true;
+    } else {
+      video.pause();
+      return true;
+    }
+  }
+}
