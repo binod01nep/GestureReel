@@ -34,7 +34,81 @@ async function init() {
   settings = await chrome.storage.sync.get({ gestureEnabled:false, autoNext:true, swipeSensitivity:50, cooldown:1200, previewEnabled:true });
   [activeTab] = await chrome.tabs.query({ active:true, currentWindow:true });
   render();
+
   if (activeTab?.id) {
+    // 1. Establish session port (triggers onDisconnect cleanup when popup closes)
+    try {
+      chrome.tabs.connect(activeTab.id, { name: 'gesturereel-popup-session' });
+    } catch (e) {}
+
+    // 2. Guarantee blur is active on the current tab even if tab was loaded before extension reload
+    try {
+      chrome.scripting.executeScript({
+        target: { tabId: activeTab.id },
+        func: () => {
+          function ensureOverlay() {
+            let overlay = document.getElementById('gr-popup-blur');
+            if (!overlay) {
+              const style = document.createElement('style');
+              style.id = 'gr-popup-blur-style';
+              style.textContent = `
+                #gr-popup-blur {
+                  position: fixed !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  right: 0 !important;
+                  bottom: 0 !important;
+                  width: 100vw !important;
+                  height: 100vh !important;
+                  background: rgba(10, 12, 20, 0.42) !important;
+                  backdrop-filter: blur(14px) saturate(130%) brightness(0.88) !important;
+                  -webkit-backdrop-filter: blur(14px) saturate(130%) brightness(0.88) !important;
+                  z-index: 2147483647 !important;
+                  pointer-events: none !important;
+                  opacity: 0 !important;
+                  transition: opacity 0.28s cubic-bezier(0.2, 0.85, 0.4, 1) !important;
+                }
+                #gr-popup-blur.visible {
+                  opacity: 1 !important;
+                }
+              `;
+              (document.head || document.documentElement).appendChild(style);
+
+              overlay = document.createElement('div');
+              overlay.id = 'gr-popup-blur';
+              overlay.setAttribute('aria-hidden', 'true');
+              (document.body || document.documentElement).appendChild(overlay);
+            }
+            return overlay;
+          }
+
+          function showBlur() {
+            const overlay = ensureOverlay();
+            requestAnimationFrame(() => overlay.classList.add('visible'));
+          }
+
+          function hideBlur() {
+            const overlay = document.getElementById('gr-popup-blur');
+            if (overlay) overlay.classList.remove('visible');
+          }
+
+          window.__grShowBlur = showBlur;
+          window.__grHideBlur = hideBlur;
+
+          showBlur();
+
+          if (!window.__grConnectListening && typeof chrome !== 'undefined' && chrome.runtime?.onConnect) {
+            window.__grConnectListening = true;
+            chrome.runtime.onConnect.addListener(port => {
+              if (port.name !== 'gesturereel-popup-session') return;
+              showBlur();
+              port.onDisconnect.addListener(hideBlur);
+            });
+          }
+        }
+      }).catch(() => {});
+    } catch (e) {}
+
     chrome.tabs.sendMessage(activeTab.id, { type:'GET_STATUS' }, status => {
       if (chrome.runtime.lastError) { $('#message').textContent = 'Open a supported reel to connect.'; return; }
       render(status);
