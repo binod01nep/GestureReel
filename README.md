@@ -4,10 +4,14 @@ GestureReel is a Manifest V3 Chrome extension for controlling short-form video f
 
 ## Features
 
-- Swipe up or show index and middle fingers with ring and pinky folded to advance the current reel.
+- **Next Reel**: Show two fingers spread (peace sign ✌️) with ring and pinky folded.
+- **Previous Reel**: Show two fingers attached/joined side-by-side with ring and pinky folded.
+- **Like Reel**: Show thumbs up (👍).
+- **Dislike / Unlike Reel**: Show thumbs down (👎) to dislike or remove an existing like.
+- **Play / Pause**: Show index finger pointing upward (☝️).
 - Optional automatic advance when the HTML5 video ends.
-- Separate navigation adapters for YouTube, Instagram, and Facebook.
-- Local webcam processing with a small optional preview.
+- Separate navigation adapters for YouTube Shorts, Instagram Reels, and Facebook Reels (Next, Previous, Like, Dislike/Unlike, Play/Pause).
+- Local webcam processing with a sleek HUD and status indicator.
 - Persistent gesture, auto-next, sensitivity, cooldown, confidence, and preview settings.
 - Frame throttling, tab-safe cleanup, cooldown protection, and graceful camera errors.
 

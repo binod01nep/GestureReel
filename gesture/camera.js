@@ -16,8 +16,14 @@ class GestureReelCamera {
     if (event?.type === 'thumbs-up') {
       this.showFeedback('👍 Liked!');
       this.onSwipe?.(event);
+    } else if (event?.type === 'thumbs-down') {
+      this.showFeedback('👎 Disliked / Unliked');
+      this.onSwipe?.(event);
     } else if (event?.type === 'two-finger') {
       this.showFeedback('✌️ Next reel');
+      this.onSwipe?.(event);
+    } else if (event?.type === 'two-finger-attached') {
+      this.showFeedback('⏮️ Previous reel');
       this.onSwipe?.(event);
     } else if (event?.type === 'index-point') {
       this.onSwipe?.(event);

@@ -14,24 +14,9 @@ class LocalHandTracker {
       if (typeof globalThis.Hands !== 'function') {
         throw new Error('Packaged MediaPipe Hands runtime is unavailable. Reload the extension.');
       }
-      await this.verifyAssets();
       return new Promise(resolve => this.initialize(resolve));
     })().catch(error => { this.onError(error); throw error; });
     return this.loading;
-  }
-
-  async verifyAssets() {
-    const assets = ['hands.binarypb', 'hands_solution_packed_assets.data', 'hand_landmark_lite.tflite'];
-    for (const asset of assets) {
-      const url = chrome.runtime.getURL(`vendor/mediapipe/hands/${asset}`);
-      let response;
-      try {
-        response = await fetch(url, { cache: 'no-store' });
-      } catch (error) {
-        throw new Error(`MediaPipe asset fetch failed (${asset}): ${error.message}`);
-      }
-      if (!response.ok) throw new Error(`MediaPipe asset unavailable (${asset}): HTTP ${response.status}`);
-    }
   }
 
   initialize(resolve) {

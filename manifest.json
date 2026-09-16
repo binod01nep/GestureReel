@@ -19,21 +19,22 @@
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*", "https://youtube.com/*", "https://www.instagram.com/*", "https://instagram.com/*", "https://www.facebook.com/*", "https://facebook.com/*"],
-      "js": ["gesture/asset-bridge.js",
+      "js": [
+        "gesture/asset-bridge.js",
         "utils/storage.js",
-        "content/youtube.js",
-        "content/instagram.js",
-        "content/facebook.js",
-        "content/platformDetector.js",
         "gesture/gestureDetector.js",
         "vendor/mediapipe/hands/hands_solution_packed_assets_loader.js",
         "vendor/mediapipe/hands/hands_solution_simd_wasm_bin.js",
         "vendor/mediapipe/hands/hands_solution_wasm_bin.js",
         "vendor/mediapipe/hands/hands.js",
         "gesture/handTracker.js",
-        "gesture/camera.js"
+        "gesture/camera.js",
+        "content/youtube.js",
+        "content/instagram.js",
+        "content/facebook.js",
+        "content/platformDetector.js"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_end"
     }
   ],
   "icons": {}

@@ -4,6 +4,8 @@
     isSupported() { return false; }
     getVideo() { return null; }
     nextVideo() { return false; }
+    prevVideo() { return false; }
+    dislikeVideo() { return false; }
   }
 
   const controllers = [new YouTubeController(), new InstagramController(), new FacebookController()];
@@ -113,7 +115,18 @@
     return moved;
   }
 
+  function retreat(reason) {
+    if (nextLock || !controller.isSupported() || typeof controller.prevVideo !== 'function') return false;
+    nextLock = true;
+    setFrameZoom(1.0);
+    currentFrameZoom = 1.0;
+    const moved = controller.prevVideo(reason);
+    window.setTimeout(() => { nextLock = false; bindVideo(); }, 900);
+    return moved;
+  }
+
   let likeLock = false;
+  let dislikeLock = false;
   let playLock = false;
 
   function like(reason) {
@@ -122,6 +135,14 @@
     const liked = controller.likeVideo(reason);
     window.setTimeout(() => { likeLock = false; }, 1200);
     return liked;
+  }
+
+  function dislike(reason) {
+    if (dislikeLock || !controller.isSupported() || typeof controller.dislikeVideo !== 'function') return false;
+    dislikeLock = true;
+    const disliked = controller.dislikeVideo(reason);
+    window.setTimeout(() => { dislikeLock = false; }, 1200);
+    return disliked;
   }
 
   function togglePlay(reason) {
@@ -135,8 +156,12 @@
   function handleGestureAction(event) {
     if (event?.type === 'thumbs-up') {
       like('thumbs-up');
+    } else if (event?.type === 'thumbs-down') {
+      dislike('thumbs-down');
     } else if (event?.type === 'two-finger') {
       advance('gesture');
+    } else if (event?.type === 'two-finger-attached') {
+      retreat('gesture');
     } else if (event?.type === 'index-point') {
       togglePlay('index-point');
     }
@@ -195,9 +220,17 @@
     if (message.type === 'SETTINGS_CHANGED') applySettings(message.settings);
     if (message.type === 'GET_STATUS') sendResponse(status());
     if (message.type === 'NEXT_REEL') advance('popup');
+    if (message.type === 'PREV_REEL') retreat('popup');
     if (message.type === 'LIKE_REEL') like('popup');
+    if (message.type === 'DISLIKE_REEL') dislike('popup');
     if (message.type === 'TOGGLE_PLAY') togglePlay('popup');
     if (message.type === 'ZOOM_FRAME' || message.type === 'ZOOM_VIDEO') zoomFrame(message.direction);
+  });
+
+  chrome.storage?.onChanged?.addListener((changes, area) => {
+    if (area === 'sync') {
+      GestureReelStorage.get().then(applySettings);
+    }
   });
 
   GestureReelStorage.get().then(applySettings);

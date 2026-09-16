@@ -11,20 +11,43 @@
   sample(0.5, 0.5); sample(0.51, 0.48); sample(0.52, 0.46);
   console.assert(events.length === 0, 'small movement should not trigger');
   detector.reset(); now = 0;
-  const makeTwoFingerLandmarks = () => {
+  const makeTwoFingerSeparatedLandmarks = () => {
     const lms = new Array(21).fill(null).map(() => ({ x: 0.5, y: 0.5, z: 0 }));
     lms[0] = { x: 0.5, y: 0.7 }; // wrist
-    lms[4] = { x: 0.45, y: 0.55 }; // thumb tip (below index/middle tips)
-    // Index extended
+    lms[4] = { x: 0.42, y: 0.55 }; // thumb tip (below index/middle tips)
+    // Index extended flared left
     lms[5] = { x: 0.46, y: 0.52 }; // mcp
-    lms[6] = { x: 0.46, y: 0.44 }; // pip
-    lms[7] = { x: 0.46, y: 0.38 }; // dip
-    lms[8] = { x: 0.46, y: 0.32 }; // tip
-    // Middle extended
+    lms[6] = { x: 0.44, y: 0.44 }; // pip
+    lms[7] = { x: 0.42, y: 0.38 }; // dip
+    lms[8] = { x: 0.40, y: 0.30 }; // tip
+    // Middle extended flared right
     lms[9] = { x: 0.54, y: 0.52 }; // mcp
-    lms[10] = { x: 0.54, y: 0.43 }; // pip
-    lms[11] = { x: 0.54, y: 0.36 }; // dip
-    lms[12] = { x: 0.54, y: 0.30 }; // tip
+    lms[10] = { x: 0.56, y: 0.43 }; // pip
+    lms[11] = { x: 0.58, y: 0.36 }; // dip
+    lms[12] = { x: 0.60, y: 0.30 }; // tip
+    // Ring folded
+    lms[14] = { x: 0.58, y: 0.52 };
+    lms[16] = { x: 0.58, y: 0.60 };
+    // Pinky folded
+    lms[18] = { x: 0.62, y: 0.54 };
+    lms[20] = { x: 0.62, y: 0.62 };
+    return lms;
+  };
+
+  const makeTwoFingerAttachedLandmarks = () => {
+    const lms = new Array(21).fill(null).map(() => ({ x: 0.5, y: 0.5, z: 0 }));
+    lms[0] = { x: 0.5, y: 0.7 }; // wrist
+    lms[4] = { x: 0.45, y: 0.55 }; // thumb tip
+    // Index extended straight up close to middle
+    lms[5] = { x: 0.48, y: 0.52 }; // mcp
+    lms[6] = { x: 0.48, y: 0.44 }; // pip
+    lms[7] = { x: 0.48, y: 0.38 }; // dip
+    lms[8] = { x: 0.48, y: 0.30 }; // tip
+    // Middle extended straight up next to index
+    lms[9] = { x: 0.52, y: 0.52 }; // mcp
+    lms[10] = { x: 0.52, y: 0.43 }; // pip
+    lms[11] = { x: 0.52, y: 0.36 }; // dip
+    lms[12] = { x: 0.52, y: 0.30 }; // tip
     // Ring folded
     lms[14] = { x: 0.58, y: 0.52 };
     lms[16] = { x: 0.58, y: 0.60 };
@@ -35,7 +58,7 @@
   };
 
   const makeOpenHandLandmarks = () => {
-    const lms = makeTwoFingerLandmarks();
+    const lms = makeTwoFingerSeparatedLandmarks();
     // Ring extended
     lms[14] = { x: 0.58, y: 0.44 };
     lms[16] = { x: 0.58, y: 0.33 };
@@ -52,27 +75,39 @@
   // 2. Open hand should NOT trigger two-finger
   console.assert(!detector.isTwoFingerPose(makeOpenHandLandmarks()), 'open hand must not trigger two-finger pose');
 
-  // 3. Two-finger pose should be detected
-  console.assert(detector.isTwoFingerPose(makeTwoFingerLandmarks()), 'two-finger pose must be detected');
+  // 3. Two-finger pose differentiation
+  console.assert(detector.isTwoFingerPose(makeTwoFingerSeparatedLandmarks()), 'two-finger separated pose must be detected');
+  console.assert(detector.isTwoFingerSeparatedPose(makeTwoFingerSeparatedLandmarks()), 'isTwoFingerSeparatedPose must be true for spread fingers');
+  console.assert(!detector.isTwoFingerAttachedPose(makeTwoFingerSeparatedLandmarks()), 'isTwoFingerAttachedPose must be false for spread fingers');
+
+  console.assert(detector.isTwoFingerPose(makeTwoFingerAttachedLandmarks()), 'two-finger attached pose must be detected');
+  console.assert(detector.isTwoFingerAttachedPose(makeTwoFingerAttachedLandmarks()), 'isTwoFingerAttachedPose must be true for attached fingers');
+  console.assert(!detector.isTwoFingerSeparatedPose(makeTwoFingerAttachedLandmarks()), 'isTwoFingerSeparatedPose must be false for attached fingers');
 
   // Index finger touching head/face (with middle finger folded or near face) should NOT trigger two-finger
-  const indexToFaceLandmarks = makeTwoFingerLandmarks();
+  const indexToFaceLandmarks = makeTwoFingerSeparatedLandmarks();
   indexToFaceLandmarks[12] = { x: 0.54, y: 0.58 }; // middle finger curled, only index touching head/face
   console.assert(!detector.isTwoFingerPose(indexToFaceLandmarks), 'index finger to head/face must NOT trigger two-finger pose');
 
-  // 4. Three consecutive frames of two-finger trigger 'two-finger' event
+  // 4a. Two consecutive frames of two-finger spread trigger 'two-finger' (next reel)
   detector.reset(); now = 2000;
-  const twoFingerSample = () => { now += 100; detector.addSample({ x: 0.5, y: 0.5, confidence: 0.9, landmarks: makeTwoFingerLandmarks() }); };
-  twoFingerSample();
-  console.assert(events.length === 0, 'first frame of two fingers should not fire yet');
-  twoFingerSample();
-  console.assert(events.length === 0, 'second frame of two fingers should not fire yet (requires 3 frames)');
-  twoFingerSample();
-  console.assert(events.length === 1 && events[0].type === 'two-finger', 'third frame of two fingers should trigger two-finger event');
+  const twoFingerSpreadSample = () => { now += 100; detector.addSample({ x: 0.5, y: 0.5, confidence: 0.9, landmarks: makeTwoFingerSeparatedLandmarks() }); };
+  twoFingerSpreadSample();
+  console.assert(events.length === 0, 'first frame of two fingers spread should not fire yet');
+  twoFingerSpreadSample();
+  console.assert(events.length === 1 && events[0].type === 'two-finger', 'second frame of two fingers spread should trigger two-finger event');
 
-  // 5. Test thumbs up pose
+  // 4b. Two consecutive frames of two-finger attached trigger 'two-finger-attached' (previous reel)
+  detector.reset(); now = 4000; // after cooldown
+  const twoFingerAttachedSample = () => { now += 100; detector.addSample({ x: 0.5, y: 0.5, confidence: 0.9, landmarks: makeTwoFingerAttachedLandmarks() }); };
+  twoFingerAttachedSample();
+  console.assert(events.length === 1, 'first frame of two fingers attached should not fire yet');
+  twoFingerAttachedSample();
+  console.assert(events.length === 2 && events[1].type === 'two-finger-attached', 'second frame of two fingers attached should trigger two-finger-attached event');
+
+  // 5a. Test thumbs up pose
   detector.reset();
-  now = 4000; // after cooldown
+  now = 6000; // after cooldown
   const makeThumbsUpLandmarks = () => {
     const lms = new Array(21).fill(null).map(() => ({ x: 0.5, y: 0.5, z: 0 }));
     lms[0] = { x: 0.5, y: 0.7 }; // wrist
@@ -99,18 +134,44 @@
   sidewaysThumbLandmarks[4] = { x: 0.65, y: 0.58 }; // thumb pointing sideways
   console.assert(!detector.isThumbsUpPose(sidewaysThumbLandmarks), 'sideways thumb should NOT trigger thumbs up pose');
 
-  // Test 3-frame requirement for thumbs up trigger
+  // Test 2-frame requirement for thumbs up trigger
   const thumbsUpSample = () => { now += 100; detector.addSample({ x: 0.5, y: 0.5, confidence: 0.9, landmarks: makeThumbsUpLandmarks() }); };
   thumbsUpSample();
-  console.assert(events.length === 1, 'first frame of thumbs up should not fire');
+  console.assert(events.length === 2, 'first frame of thumbs up should not fire');
   thumbsUpSample();
-  console.assert(events.length === 1, 'second frame of thumbs up should not fire yet (needs 3 consecutive frames)');
-  thumbsUpSample();
-  console.assert(events.length === 2 && events[1].type === 'thumbs-up', 'third frame of thumbs up should trigger thumbs-up event');
+  console.assert(events.length === 3 && events[2].type === 'thumbs-up', 'second frame of thumbs up should trigger thumbs-up event');
+
+  // 5b. Test thumbs down pose
+  detector.reset();
+  now = 8000;
+  const makeThumbsDownLandmarks = () => {
+    const lms = new Array(21).fill(null).map(() => ({ x: 0.5, y: 0.5, z: 0 }));
+    lms[0] = { x: 0.5, y: 0.3 }; // wrist
+    lms[1] = { x: 0.45, y: 0.35 };
+    lms[2] = { x: 0.42, y: 0.42 }; // thumb mcp
+    lms[3] = { x: 0.40, y: 0.52 }; // thumb ip
+    lms[4] = { x: 0.38, y: 0.62 }; // thumb tip
+
+    lms[5] = { x: 0.48, y: 0.45 }; lms[6] = { x: 0.48, y: 0.50 }; lms[7] = { x: 0.48, y: 0.46 }; lms[8] = { x: 0.48, y: 0.42 }; // index folded
+    lms[9] = { x: 0.52, y: 0.45 }; lms[10] = { x: 0.52, y: 0.50 }; lms[11] = { x: 0.52, y: 0.46 }; lms[12] = { x: 0.52, y: 0.42 }; // middle folded
+    lms[13] = { x: 0.56, y: 0.44 }; lms[14] = { x: 0.56, y: 0.49 }; lms[15] = { x: 0.56, y: 0.45 }; lms[16] = { x: 0.56, y: 0.41 }; // ring folded
+    lms[17] = { x: 0.60, y: 0.42 }; lms[18] = { x: 0.60, y: 0.47 }; lms[19] = { x: 0.60, y: 0.43 }; lms[20] = { x: 0.60, y: 0.39 }; // pinky folded
+    return lms;
+  };
+
+  console.assert(detector.isThumbsDownPose(makeThumbsDownLandmarks()), 'isThumbsDownPose should return true for synthetic thumbs down');
+  console.assert(!detector.isThumbsDownPose(makeThumbsUpLandmarks()), 'thumbs up hand should NOT trigger thumbs down pose');
+  console.assert(!detector.isThumbsUpPose(makeThumbsDownLandmarks()), 'thumbs down hand should NOT trigger thumbs up pose');
+
+  const thumbsDownSample = () => { now += 100; detector.addSample({ x: 0.5, y: 0.5, confidence: 0.9, landmarks: makeThumbsDownLandmarks() }); };
+  thumbsDownSample();
+  console.assert(events.length === 3, 'first frame of thumbs down should not fire');
+  thumbsDownSample();
+  console.assert(events.length === 4 && events[3].type === 'thumbs-down', 'second frame of thumbs down should trigger thumbs-down event');
 
   // 6. Test index pointing pose (play/pause)
   detector.reset();
-  now = 6000;
+  now = 10000;
   const makeIndexPointLandmarks = () => {
     const lms = new Array(21).fill(null).map(() => ({ x: 0.5, y: 0.5, z: 0 }));
     lms[0] = { x: 0.5, y: 0.7 }; // wrist
@@ -127,19 +188,21 @@
   };
 
   console.assert(detector.isIndexPointingPose(makeIndexPointLandmarks()), 'isIndexPointingPose should return true for index pointing hand');
-  console.assert(!detector.isIndexPointingPose(makeTwoFingerLandmarks()), 'two finger hand should NOT trigger index point pose');
+  console.assert(!detector.isIndexPointingPose(makeTwoFingerSeparatedLandmarks()), 'two finger hand should NOT trigger index point pose');
+  console.assert(!detector.isIndexPointingPose(makeTwoFingerAttachedLandmarks()), 'two finger attached hand should NOT trigger index point pose');
   console.assert(!detector.isIndexPointingPose(makeThumbsUpLandmarks()), 'thumbs up hand should NOT trigger index point pose');
+  console.assert(!detector.isIndexPointingPose(makeThumbsDownLandmarks()), 'thumbs down hand should NOT trigger index point pose');
 
   const indexPointSample = () => { now += 100; detector.addSample({ x: 0.5, y: 0.5, confidence: 0.9, landmarks: makeIndexPointLandmarks() }); };
   indexPointSample();
-  console.assert(events.length === 2, 'first frame of index point should not fire yet');
+  console.assert(events.length === 4, 'first frame of index point should not fire yet');
   indexPointSample();
-  console.assert(events.length === 3 && events[2].type === 'index-point', 'second frame of index point should trigger index-point event');
+  console.assert(events.length === 5 && events[4].type === 'index-point', 'second frame of index point should trigger index-point event');
 
   // 7. Test 5-finger gesture (connected fingertips = zoom out, releasing = zoom in)
   detector.reset();
   detector.zoomEnabled = true; // test preserved logic
-  now = 8000;
+  now = 12000;
   const makeFiveFingerLandmarks = (radius = 0.04) => {
     const lms = new Array(21).fill(null).map(() => ({ x: 0.5, y: 0.5, z: 0 }));
     lms[0] = { x: 0.5, y: 0.7 }; // wrist
@@ -166,12 +229,12 @@
   detector.addSample({ x: 0.5, y: 0.5, confidence: 0.9, landmarks: makeFiveFingerLandmarks(0.04) });
   now += 100;
   detector.addSample({ x: 0.5, y: 0.5, confidence: 0.9, landmarks: makeFiveFingerLandmarks(0.12) });
-  console.assert(events.length === 4 && events[3].type === 'zoom' && events[3].direction === 'in', 'releasing fingers outwards should trigger zoom in');
+  console.assert(events.length === 6 && events[5].type === 'zoom' && events[5].direction === 'in', 'releasing fingers outwards should trigger zoom in');
 
   // Test Zoom Out: connecting all fingertips together (0.12 -> 0.04)
   now += 250;
   detector.addSample({ x: 0.5, y: 0.5, confidence: 0.9, landmarks: makeFiveFingerLandmarks(0.04) });
-  console.assert(events.length === 5 && events[4].type === 'zoom' && events[4].direction === 'out', 'connecting all fingertips together should trigger zoom out');
+  console.assert(events.length === 7 && events[6].type === 'zoom' && events[6].direction === 'out', 'connecting all fingertips together should trigger zoom out');
 
   performance.now = originalNow;
   console.log('All gesture detector tests passed successfully.');
