@@ -174,25 +174,41 @@ class SwipeUpDetector {
 
     // 1. Index finger extended upward
     const indexUp = indexTip.y < indexPip.y && indexTip.y < indexMcp.y && indexTip.y < wrist.y;
-    const indexExtended = (indexMcp.y - indexTip.y) > handScale * 0.22;
+    const indexExtended = (indexMcp.y - indexTip.y) > handScale * 0.16 || this.dist(indexTip, indexMcp) > handScale * 0.35;
     if (!indexUp || !indexExtended) return false;
 
-    // 2. Other fingers (Middle, Ring, Pinky) must be folded
+    // 2. Middle finger must NOT be extended (prevents peace sign / two-finger confusion)
     const middleTip = landmarks[12];
     const middlePip = landmarks[10];
-    const ringTip = landmarks[16];
-    const ringPip = landmarks[14];
-    const pinkyTip = landmarks[20];
-    const pinkyPip = landmarks[18];
+    const middleMcp = landmarks[9];
+    const middleExtended = middleTip.y < middlePip.y && (middleMcp.y - middleTip.y) > handScale * 0.18 && this.dist(middleTip, wrist) > this.dist(middlePip, wrist) + 0.02;
+    if (middleExtended) return false;
 
-    const otherFolded = (middleTip.y > middlePip.y || this.dist(middleTip, wrist) < this.dist(indexTip, wrist) * 0.85) &&
-                        (ringTip.y > ringPip.y || this.dist(ringTip, wrist) < this.dist(indexTip, wrist) * 0.85) &&
-                        (pinkyTip.y > pinkyPip.y || this.dist(pinkyTip, wrist) < this.dist(indexTip, wrist) * 0.85);
-    if (!otherFolded) return false;
+    // 3. Other fingers (Middle, Ring, Pinky) must be folded / lower than index
+    const otherFingers = [
+      { tip: 12, pip: 10, mcp: 9 },
+      { tip: 16, pip: 14, mcp: 13 },
+      { tip: 20, pip: 18, mcp: 17 }
+    ];
 
-    // 3. Index tip must be the highest point of the hand
-    if (indexTip.y >= middleTip.y - 0.02 || indexTip.y >= ringTip.y - 0.02 || indexTip.y >= pinkyTip.y - 0.02) return false;
-    if (landmarks[4].y <= indexTip.y) return false; // thumb below index tip
+    for (const f of otherFingers) {
+      const tip = landmarks[f.tip];
+      const pip = landmarks[f.pip];
+      const mcp = landmarks[f.mcp];
+
+      // Index tip must be clearly higher than all other fingertips
+      if (indexTip.y >= tip.y - 0.015) return false;
+
+      // Finger should be folded (tip below pip, or close to knuckle/wrist)
+      const folded = tip.y >= pip.y - 0.03 ||
+                     this.dist(tip, wrist) < this.dist(indexTip, wrist) * 0.88 ||
+                     this.dist(tip, mcp) < handScale * 0.45;
+      if (!folded) return false;
+    }
+
+    // 4. Thumb must not be elevated above index tip
+    const thumbTip = landmarks[4];
+    if (thumbTip.y <= indexTip.y) return false;
 
     return true;
   }
@@ -291,7 +307,7 @@ class SwipeUpDetector {
         this.twoFingerSpreadFrames = 0;
         this.twoFingerAttachedFrames = 0;
         this.twoFingerFrames = 0;
-        if (this.indexFingerFrames >= 2) {
+        if (this.indexFingerFrames >= 1) {
           this.cooldownUntil = now + this.config.cooldown;
           this.reset();
           this.onSwipe({ type: 'index-point' });

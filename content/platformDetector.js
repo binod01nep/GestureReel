@@ -153,20 +153,50 @@
     return toggled;
   }
 
-  function handleGestureAction(event) {
+  function handleGestureAction(event, provideFeedback) {
     if (event?.type === 'thumbs-up') {
-      like('thumbs-up');
+      const res = like('thumbs-up');
+      if (res === 'already-liked') {
+        provideFeedback?.('❤️ Already Liked');
+      } else if (res) {
+        provideFeedback?.('👍 Liked!');
+      } else {
+        provideFeedback?.('⚠️ Like failed', true);
+      }
     } else if (event?.type === 'thumbs-down') {
-      dislike('thumbs-down');
+      const res = dislike('thumbs-down');
+      if (res) {
+        provideFeedback?.('👎 Disliked / Unliked');
+      } else {
+        provideFeedback?.('⚠️ Action failed', true);
+      }
     } else if (event?.type === 'two-finger') {
-      advance('gesture');
+      const res = advance('gesture');
+      if (res) {
+        provideFeedback?.('✌️ Next reel');
+      } else {
+        provideFeedback?.('⚠️ Next unavailable', true);
+      }
     } else if (event?.type === 'two-finger-attached') {
-      retreat('gesture');
+      const res = retreat('gesture');
+      if (res) {
+        provideFeedback?.('⏮️ Previous reel');
+      } else {
+        provideFeedback?.('⚠️ Prev unavailable', true);
+      }
     } else if (event?.type === 'index-point') {
-      togglePlay('index-point');
+      const res = togglePlay('index-point');
+      setTimeout(() => {
+        const pageVideo = controller.getVideo() || document.querySelector('video:not(#gesturereel-camera video)');
+        if (pageVideo) {
+          provideFeedback?.(pageVideo.paused ? '⏸️ Paused' : '▶️ Playing');
+        } else if (res) {
+          provideFeedback?.('⏯️ Play / Pause');
+        } else {
+          provideFeedback?.('⚠️ Video not found', true);
+        }
+      }, 70);
     }
-    // Zoom feature cut off for now (code preserved above):
-    // else if (event?.type === 'zoom') { zoomFrame(event.direction); }
   }
 
   function handleEnded() {

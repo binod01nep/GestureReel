@@ -195,9 +195,7 @@
 
   const indexPointSample = () => { now += 100; detector.addSample({ x: 0.5, y: 0.5, confidence: 0.9, landmarks: makeIndexPointLandmarks() }); };
   indexPointSample();
-  console.assert(events.length === 4, 'first frame of index point should not fire yet');
-  indexPointSample();
-  console.assert(events.length === 5 && events[4].type === 'index-point', 'second frame of index point should trigger index-point event');
+  console.assert(events.length === 5 && events[4].type === 'index-point', 'first frame of index point should immediately trigger index-point event');
 
   // 7. Test 5-finger gesture (connected fingertips = zoom out, releasing = zoom in)
   detector.reset();

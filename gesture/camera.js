@@ -13,47 +13,16 @@ class GestureReelCamera {
   }
 
   handleGesture(event) {
-    if (event?.type === 'thumbs-up') {
-      this.showFeedback('👍 Liked!');
-      this.onSwipe?.(event);
-    } else if (event?.type === 'thumbs-down') {
-      this.showFeedback('👎 Disliked / Unliked');
-      this.onSwipe?.(event);
-    } else if (event?.type === 'two-finger') {
-      this.showFeedback('✌️ Next reel');
-      this.onSwipe?.(event);
-    } else if (event?.type === 'two-finger-attached') {
-      this.showFeedback('⏮️ Previous reel');
-      this.onSwipe?.(event);
-    } else if (event?.type === 'index-point') {
-      this.onSwipe?.(event);
-      setTimeout(() => {
-        const pageVideo = document.querySelector('video:not(#gesturereel-camera video)');
-        if (pageVideo) {
-          this.showFeedback(pageVideo.paused ? '⏸️ Paused' : '▶️ Playing');
-        } else {
-          this.showFeedback('⏯️ Play / Pause');
-        }
-      }, 60);
+    if (this.onSwipe) {
+      this.onSwipe(event, (text, isError) => this.showFeedback(text, isError));
     }
-    /* Zoom feature cutoff for now (code preserved):
-    else if (event?.type === 'zoom') {
-      this.onSwipe?.(event);
-      setTimeout(() => {
-        const frame = document.querySelector('#player-container, #shorts-player, article, video:not(#gesturereel-camera video)');
-        const transform = frame?.style?.transform || '';
-        const match = transform.match(/scale\(([\d\.]+)\)/);
-        const scaleVal = match ? `${match[1]}x` : (event.direction === 'in' ? 'Zoom In' : '1.0x');
-        this.showFeedback(event.direction === 'in' ? `🔍 Frame In (${scaleVal})` : `🔍 Frame Out (${scaleVal})`);
-      }, 40);
-    } */
   }
 
-  showFeedback(text) {
+  showFeedback(text, isError = false) {
     const state = this.preview?.querySelector('.gr-camera-state');
     if (state) {
       state.textContent = text;
-      state.style.color = '#98e6c2';
+      state.style.color = isError ? '#ff8585' : '#98e6c2';
       state.style.fontWeight = 'bold';
       clearTimeout(this.feedbackTimer);
       this.feedbackTimer = setTimeout(() => {
@@ -62,7 +31,7 @@ class GestureReelCamera {
           state.style.color = '';
           state.style.fontWeight = '';
         }
-      }, 1200);
+      }, 1400);
     }
   }
 
@@ -107,7 +76,7 @@ class GestureReelCamera {
   async loop() {
     if (!this.running || !this.video) return;
     const now = performance.now();
-    if (now - this.lastFrame >= 100) {
+    if (now - this.lastFrame >= 33) {
       this.lastFrame = now;
       if (this.video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !this.video.videoWidth) {
         requestAnimationFrame(() => this.loop());
