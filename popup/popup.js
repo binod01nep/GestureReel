@@ -4,6 +4,7 @@ let activeTab;
 
 function platformLabel(url) {
   if (/youtube\.com\/shorts/.test(url)) return 'YouTube Shorts';
+  if (/youtube\.com/.test(url)) return 'YouTube Video';
   if (/instagram\.com\/reel/.test(url)) return 'Instagram Reels';
   if (/facebook\.com\/(reel|watch)/.test(url)) return 'Facebook Reels';
   return 'Unsupported tab';
@@ -23,7 +24,7 @@ function render(status) {
   $('#sensitivityValue').value = settings.swipeSensitivity;
   $('#cooldownValue').value = `${(settings.cooldown / 1000).toFixed(1)}s`;
   $('#platform').textContent = status?.platform || platformLabel(activeTab?.url || '');
-  $('#support').textContent = status?.supported ? 'Ready' : 'Open a reel';
+  $('#support').textContent = status?.supported ? 'Ready' : 'Open video / reel';
   $('#support').classList.toggle('off', !status?.supported);
   const active = status?.camera === 'ON' || settings.gestureEnabled;
   $('#cameraState').textContent = active ? 'Active' : 'Disabled';

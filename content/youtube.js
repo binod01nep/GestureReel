@@ -1,8 +1,11 @@
 class YouTubeController {
-  get name() { return 'YouTube Shorts'; }
-  isSupported() { return location.hostname.endsWith('youtube.com') && (location.pathname.startsWith('/shorts/') || location.pathname.includes('/shorts')); }
+  get name() { return this.isShorts() ? 'YouTube Shorts' : 'YouTube Video'; }
+  isSupported() { return location.hostname.endsWith('youtube.com'); }
+  isShorts() { return location.hostname.endsWith('youtube.com') && (location.pathname.startsWith('/shorts/') || location.pathname.includes('/shorts')); }
+  isRegularVideo() { return location.hostname.endsWith('youtube.com') && !this.isShorts(); }
 
   getActiveRenderer() {
+    if (!this.isShorts()) return null;
     return document.querySelector('ytd-reel-video-renderer[is-active]') ||
       [...document.querySelectorAll('ytd-reel-video-renderer')].find(renderer => {
         const v = renderer.querySelector('video');
@@ -12,18 +15,41 @@ class YouTubeController {
   }
 
   getVideo() {
-    const activeRenderer = this.getActiveRenderer();
-    if (activeRenderer) {
-      const activeVideo = activeRenderer.querySelector('video');
-      if (activeVideo) return activeVideo;
+    if (this.isShorts()) {
+      const activeRenderer = this.getActiveRenderer();
+      if (activeRenderer) {
+        const activeVideo = activeRenderer.querySelector('video');
+        if (activeVideo) return activeVideo;
+      }
     }
+    const mainVideo = document.querySelector('video.html5-main-video, #movie_player video');
+    if (mainVideo && !mainVideo.closest('#gesturereel-camera')) return mainVideo;
+
     const videos = [...document.querySelectorAll('video')]
       .filter(video => !video.closest('#gesturereel-camera'))
       .map(video => ({ video, rect: video.getBoundingClientRect() }))
       .filter(({ rect }) => rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight)
       .sort((first, second) => (second.rect.width * second.rect.height) - (first.rect.width * first.rect.height))
       .map(({ video }) => video);
-    return videos.find(video => !video.paused) || videos[0] || document.querySelector('ytd-shorts video, video:not(#gesturereel-camera video)');
+    return videos.find(video => !video.paused) || videos[0] || document.querySelector('video.html5-main-video, #movie_player video, ytd-shorts video, video:not(#gesturereel-camera video)');
+  }
+
+  setPlaybackRate(rate) {
+    const video = this.getVideo();
+    if (!video) return false;
+    video.playbackRate = rate;
+    try {
+      const moviePlayer = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+      if (moviePlayer && typeof moviePlayer.setPlaybackRate === 'function') {
+        moviePlayer.setPlaybackRate(rate);
+      }
+    } catch (e) {}
+    return true;
+  }
+
+  getPlaybackRate() {
+    const video = this.getVideo();
+    return video ? video.playbackRate : 1.0;
   }
 
   simulateClick(el) {

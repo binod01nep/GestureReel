@@ -153,7 +153,73 @@
     return toggled;
   }
 
+  let speedToastTimer = null;
+  function showSpeedToast(text) {
+    let toast = document.getElementById('gesturereel-speed-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'gesturereel-speed-toast';
+      Object.assign(toast.style, {
+        position: 'fixed',
+        top: '60px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: '2147483647',
+        background: 'rgba(16, 22, 28, 0.92)',
+        color: '#ffffff',
+        padding: '10px 22px',
+        borderRadius: '30px',
+        border: '1px solid rgba(255, 255, 255, 0.18)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.45)',
+        backdropFilter: 'blur(12px)',
+        font: '600 15px system-ui, -apple-system, sans-serif',
+        letterSpacing: '0.3px',
+        pointerEvents: 'none',
+        transition: 'opacity 0.25s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        opacity: '0',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+      });
+      document.body.appendChild(toast);
+    }
+    toast.textContent = text;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0) scale(1)';
+    clearTimeout(speedToastTimer);
+    speedToastTimer = setTimeout(() => {
+      if (toast) {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(-8px) scale(0.95)';
+      }
+    }, 1200);
+  }
+
   function handleGestureAction(event, provideFeedback) {
+    const isRegularVideo = typeof controller.isRegularVideo === 'function' && controller.isRegularVideo();
+
+    if (isRegularVideo) {
+      if (event?.type === 'two-finger' || event?.type === 'two-finger-attached') {
+        const res = typeof controller.setPlaybackRate === 'function' ? controller.setPlaybackRate(2.0) : false;
+        if (res) {
+          showSpeedToast('⚡ 2x Speed');
+          provideFeedback?.('⚡ 2x Speed');
+        } else {
+          provideFeedback?.('⚠️ Video not found', true);
+        }
+        return;
+      } else if (event?.type === 'index-point') {
+        const res = typeof controller.setPlaybackRate === 'function' ? controller.setPlaybackRate(1.0) : false;
+        if (res) {
+          showSpeedToast('▶️ 1x Speed');
+          provideFeedback?.('▶️ 1x Speed');
+        } else {
+          provideFeedback?.('⚠️ Video not found', true);
+        }
+        return;
+      }
+    }
+
     if (event?.type === 'thumbs-up') {
       const res = like('thumbs-up');
       if (res === 'already-liked') {
@@ -201,6 +267,7 @@
 
   function handleEnded() {
     if (!settings?.autoNext) return;
+    if (typeof controller.isRegularVideo === 'function' && controller.isRegularVideo()) return;
     const endedMediaKey = mediaKey;
     advance('video-ended');
     if (completionRetries >= 3) return;
@@ -218,6 +285,7 @@
 
   function checkCompletion() {
     if (!settings?.autoNext || !video) return;
+    if (typeof controller.isRegularVideo === 'function' && controller.isRegularVideo()) return;
     const currentMediaKey = getMediaKey(video);
     if (currentMediaKey !== mediaKey) {
       mediaKey = currentMediaKey;
