@@ -1,6 +1,6 @@
 # GestureReel
 
-GestureReel is a Manifest V3 Chrome extension for controlling short-form video feeds with a local webcam hand gesture. It is designed for YouTube Shorts, Instagram Reels, and Facebook Reels.
+GestureReel is a Manifest V3 Chrome extension for controlling short-form video feeds with a local webcam hand gesture. It is designed for YouTube Shorts,Youtube Video Instagram Reels, and Facebook Reels.
 
 ## Features
 
