@@ -350,6 +350,6 @@
   bindVideo();
   new MutationObserver(bindVideo).observe(document.documentElement, { childList: true, subtree: true });
   completionTimer = window.setInterval(() => { refreshController(); bindVideo(); checkCompletion(); }, 250);
-  document.addEventListener('pointermove', bindVideo, { passive: true });
-  document.addEventListener('pointerdown', bindVideo, { passive: true });
+  window.addEventListener('yt-navigate-finish', () => { refreshController(); bindVideo(); }, { passive: true });
+  window.addEventListener('popstate', () => { refreshController(); bindVideo(); }, { passive: true });
 })();

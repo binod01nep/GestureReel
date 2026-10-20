@@ -1,6 +1,15 @@
 // Lightweight browser-console test fixture for the pure gesture classifier.
 // Load gesture/gestureDetector.js first, then run this file in a page.
 (() => {
+  if (typeof require !== 'undefined') {
+    const fs = require('fs');
+    const path = require('path');
+    const vm = require('vm');
+    if (typeof SwipeUpDetector === 'undefined') {
+      vm.runInThisContext(fs.readFileSync(path.join(__dirname, '../gesture/gestureDetector.js'), 'utf8'));
+    }
+  }
+
   const events = [];
   const detector = new SwipeUpDetector(event => events.push(event));
   detector.configure({ swipeSensitivity: 50, cooldown: 1200, confidence: 0.65 });

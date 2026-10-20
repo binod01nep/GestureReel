@@ -4,6 +4,7 @@
   class SessionManager {
     constructor() {
       this.currentSession = null;
+      this.pendingVideoId = null;
     }
 
     isActive() {
@@ -15,6 +16,22 @@
     }
 
     async startSession({ platform, videoType, videoId, videoTitle, videoUrl, isPlaying = false, isVisible = true }) {
+      // Deduplication: if same video is already the current session, update metadata/state and do not duplicate
+      if (this.currentSession && this.currentSession.videoId === videoId) {
+        if (videoTitle && videoTitle !== 'Untitled Video') this.currentSession.videoTitle = videoTitle;
+        if (videoUrl) this.currentSession.videoUrl = videoUrl;
+        if (isPlaying) {
+          this.setPlayback(true);
+        }
+        return this.currentSession;
+      }
+
+      // Prevent concurrent race conditions when two events start a session for the same video simultaneously
+      if (this.pendingVideoId === videoId) {
+        return this.currentSession;
+      }
+      this.pendingVideoId = videoId;
+
       // Flush previous session if still active
       if (this.currentSession) {
         await this.flushInterval();
@@ -40,16 +57,20 @@
         status: active ? 'active' : (isPlaying ? 'idle' : 'paused'),
         date: dateKey
       };
+      this.pendingVideoId = null;
 
-      // Record new view in daily aggregator
-      await GestureReelDailyAggregator.recordNewView({
-        dateKey,
-        platform,
-        videoType,
-        videoId,
-        videoTitle: this.currentSession.videoTitle,
-        videoUrl: this.currentSession.videoUrl
-      });
+      // Record new view in daily aggregator if ID is valid
+      const isValid = GestureReelDailyAggregator.isValidVideoId(videoId);
+      if (isValid) {
+        await GestureReelDailyAggregator.recordNewView({
+          dateKey,
+          platform,
+          videoType,
+          videoId,
+          videoTitle: this.currentSession.videoTitle,
+          videoUrl: this.currentSession.videoUrl
+        });
+      }
 
       if (chrome?.storage?.local) {
         await chrome.storage.local.set({ analytics_active_session: this.currentSession });
@@ -143,6 +164,7 @@
       if (!this.currentSession) return;
       await this.flushInterval();
       this.currentSession = null;
+      this.pendingVideoId = null;
       if (chrome?.storage?.local) {
         await chrome.storage.local.set({ analytics_active_session: null });
       }

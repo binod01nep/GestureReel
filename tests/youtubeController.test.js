@@ -1,4 +1,13 @@
 (() => {
+  if (typeof require !== 'undefined') {
+    const fs = require('fs');
+    const path = require('path');
+    const vm = require('vm');
+    if (typeof YouTubeController === 'undefined') {
+      vm.runInThisContext(fs.readFileSync(path.join(__dirname, '../content/youtube.js'), 'utf8'));
+    }
+  }
+
   // Test YouTubeController
   const fakeLocation = { hostname: 'www.youtube.com', pathname: '/watch' };
   globalThis.location = fakeLocation;

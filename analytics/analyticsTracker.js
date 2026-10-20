@@ -52,9 +52,24 @@
 
       const videoUrl = window.location.href;
 
-      // Deduplication: if same video and session is already active, don't count twice
-      if (this.currentVideoId === videoId && this.currentVideo === video && this.session.getCurrentSession()) {
-        // Re-check playback state in case of autoplay
+      // Always bind media events to the video element
+      this.bindVideoEvents(video);
+
+      // Validate video ID: do not start sessions or record views for unresolved placeholders
+      const isValid = GestureReelDailyAggregator?.isValidVideoId
+        ? GestureReelDailyAggregator.isValidVideoId(videoId)
+        : (Boolean(videoId) && !['yt_video', 'ig_reel', 'fb_reel', 'video', 'undefined', 'null'].includes(videoId));
+
+      if (!isValid) {
+        // ID not yet ready (e.g. video element just mounted before URL/metadata settled)
+        this.currentVideo = video;
+        return;
+      }
+
+      // Deduplication: if same videoId is already active, don't count twice or start a new session!
+      // (Even if the DOM video element was swapped/upgraded from placeholder to active renderer)
+      if (this.currentVideoId === videoId) {
+        this.currentVideo = video;
         const isPlaying = !video.paused && !video.ended;
         this.session.setPlayback(isPlaying);
         return;
@@ -77,9 +92,6 @@
         isPlaying,
         isVisible
       });
-
-      // Bind media events to video
-      this.bindVideoEvents(video);
     }
 
     bindVideoEvents(video) {

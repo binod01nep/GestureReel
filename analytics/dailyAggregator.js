@@ -14,8 +14,28 @@
       return { today, yesterday, todayKey, yesterdayKey };
     },
 
+    _recentRecorded: {},
+
+    isValidVideoId(id) {
+      if (!id || typeof id !== 'string') return false;
+      const clean = id.trim();
+      if (!clean) return false;
+      if (['video', 'yt_video', 'ig_reel', 'fb_reel', 'vid_video', 'undefined', 'null'].includes(clean.toLowerCase())) return false;
+      if (/^(yt|ig|fb|vid)_(nan|undefined|0(_0)?)(_.*)?$/i.test(clean)) return false;
+      return true;
+    },
+
     async recordNewView({ dateKey, platform, videoType, videoId, videoTitle, videoUrl }) {
       if (!chrome?.storage?.local) return;
+      if (!this.isValidVideoId(videoId)) return;
+
+      const now = Date.now();
+      if (!this._recentRecorded) this._recentRecorded = {};
+      if (this._recentRecorded[videoId] && (now - this._recentRecorded[videoId] < 10000)) {
+        return;
+      }
+      this._recentRecorded[videoId] = now;
+
       try {
         const { todayKey, yesterdayKey } = GestureReelRetention.getTodayAndYesterdayKeys();
         const activeKey = dateKey || todayKey;
@@ -23,6 +43,17 @@
         const data = await chrome.storage.local.get(['analytics_days', 'analytics_recent_sessions']);
         let days = data.analytics_days || {};
         let recentSessions = Array.isArray(data.analytics_recent_sessions) ? data.analytics_recent_sessions : [];
+
+        // Deduplication: if the exact same video was already recorded within 15 seconds, avoid double-increment
+        if (recentSessions.length > 0 &&
+            recentSessions[0].videoId === videoId &&
+            (now - (recentSessions[0].timestamp || 0) < 15000)) {
+          if (videoTitle && (!recentSessions[0].videoTitle || recentSessions[0].videoTitle === 'Untitled Video')) {
+            recentSessions[0].videoTitle = videoTitle;
+            await chrome.storage.local.set({ analytics_recent_sessions: recentSessions });
+          }
+          return;
+        }
 
         if (!days[activeKey]) {
           days[activeKey] = GestureReelRetention.createEmptyDay(activeKey);
@@ -46,7 +77,7 @@
         } else {
           plat.videosCount = (plat.videosCount || 0) + 1;
         }
-        record.updatedAt = Date.now();
+        record.updatedAt = now;
 
         // Track in recent sessions (capped at 50 for quick display/history)
         recentSessions.unshift({
@@ -56,7 +87,7 @@
           platform,
           videoType,
           date: activeKey,
-          timestamp: Date.now()
+          timestamp: now
         });
         if (recentSessions.length > 50) {
           recentSessions = recentSessions.slice(0, 50);

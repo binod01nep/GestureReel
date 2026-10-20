@@ -15,13 +15,17 @@ class YouTubeController {
       const activeRenderer = this.getActiveRenderer();
       const id = activeRenderer?.getAttribute('id') || activeRenderer?.querySelector('a[href*="/shorts/"]')?.href?.match(/\/shorts\/([a-zA-Z0-9_-]+)/)?.[1];
       if (id) return id;
+      if (video?.currentSrc && !video.currentSrc.startsWith('blob:') && video.currentSrc.length > 15) {
+        return video.currentSrc;
+      }
+      return '';
     } else {
       const vParam = new URLSearchParams(location.search).get('v');
       if (vParam) return vParam;
       const match = location.pathname.match(/\/watch\/([a-zA-Z0-9_-]+)/);
       if (match) return match[1];
     }
-    return video?.currentSrc || (video ? `yt_${video.duration}_${video.videoWidth}` : 'yt_video');
+    return video?.currentSrc || (video && video.duration > 0 ? `yt_${video.duration}_${video.videoWidth}` : '');
   }
 
   getVideoTitle(video) {
@@ -56,6 +60,12 @@ class YouTubeController {
         const activeVideo = activeRenderer.querySelector('video');
         if (activeVideo) return activeVideo;
       }
+      const shortsVideos = [...document.querySelectorAll('ytd-shorts video, ytd-reel-video-renderer video')]
+        .filter(v => !v.closest('#gesturereel-camera'));
+      if (shortsVideos.length > 0) {
+        return shortsVideos.find(v => !v.paused) || shortsVideos[0];
+      }
+      return null;
     }
     const mainVideo = document.querySelector('video.html5-main-video, #movie_player video');
     if (mainVideo && !mainVideo.closest('#gesturereel-camera')) return mainVideo;

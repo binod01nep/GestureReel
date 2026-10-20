@@ -191,6 +191,57 @@
     await sessionManager.endSession();
     console.assert(sess.activeDurationMs === 65000, `Final duration should be 65000ms, got: ${sess.activeDurationMs}`);
 
+    // Test 6: Deduplication & placeholder rejection
+    const startReelsCount = mockStorage.analytics_days[todayKey].reelsCount;
+
+    // A. Placeholder ID should be rejected
+    await GestureReelDailyAggregator.recordNewView({
+      dateKey: todayKey,
+      platform: 'YouTube Shorts',
+      videoType: 'reel',
+      videoId: 'yt_video',
+      videoTitle: 'Placeholder'
+    });
+    console.assert(mockStorage.analytics_days[todayKey].reelsCount === startReelsCount, 'Placeholder IDs must not increment count');
+
+    // B. Real Short clicked at first: Call 1
+    await GestureReelDailyAggregator.recordNewView({
+      dateKey: todayKey,
+      platform: 'YouTube Shorts',
+      videoType: 'reel',
+      videoId: 'short_first_click_123',
+      videoTitle: 'First Click Short'
+    });
+    console.assert(mockStorage.analytics_days[todayKey].reelsCount === startReelsCount + 1, 'First real view must increment count by exactly 1');
+
+    // C. Immediate Call 2 for same videoId: should deduplicate
+    await GestureReelDailyAggregator.recordNewView({
+      dateKey: todayKey,
+      platform: 'YouTube Shorts',
+      videoType: 'reel',
+      videoId: 'short_first_click_123',
+      videoTitle: 'First Click Short (Active Renderer)'
+    });
+    console.assert(mockStorage.analytics_days[todayKey].reelsCount === startReelsCount + 1, 'Duplicate call for same videoId must NOT increment count again');
+
+    // D. SessionManager deduplication test
+    const sm2 = new GestureReelSessionManager();
+    const sessA = await sm2.startSession({
+      platform: 'YouTube Shorts',
+      videoType: 'reel',
+      videoId: 'short_sm_dup',
+      videoTitle: 'Short SM Test'
+    });
+    const countBeforeSecondCall = mockStorage.analytics_days[todayKey].reelsCount;
+    const sessB = await sm2.startSession({
+      platform: 'YouTube Shorts',
+      videoType: 'reel',
+      videoId: 'short_sm_dup',
+      videoTitle: 'Short SM Test Updated'
+    });
+    console.assert(sessA === sessB, 'SessionManager should reuse existing session for same videoId');
+    console.assert(mockStorage.analytics_days[todayKey].reelsCount === countBeforeSecondCall, 'SessionManager should not increment view count on duplicate videoId');
+
     Date.now = realDateNow;
     console.log('✅ All GestureReel Analytics tests passed successfully!');
   })();
