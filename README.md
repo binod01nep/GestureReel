@@ -9,6 +9,9 @@ GestureReel is a Manifest V3 Chrome extension for controlling short-form video f
 - **Like Reel**: Show thumbs up (👍).
 - **Dislike / Unlike Reel**: Show thumbs down (👎) to dislike or remove an existing like.
 - **Play / Pause**: Show index finger pointing upward (☝️).
+- **2x / 1x Speed**: Control YouTube playback rate with gestures (✌️ for 2x speed, ☝️ for 1x normal speed).
+- **Live Reels & Video Analytics**: Real-time tracking of reels and videos viewed, active viewing time, live session timers, and platform breakdowns.
+- **Rolling Two-Calendar-Day History**: Local calendar day retention retaining only today and yesterday, with automatic pruning of older records.
 - Optional automatic advance when the HTML5 video ends.
 - Separate navigation adapters for YouTube Shorts, Instagram Reels, and Facebook Reels (Next, Previous, Like, Dislike/Unlike, Play/Pause).
 - Local webcam processing with a sleek HUD and status indicator.
@@ -17,14 +20,19 @@ GestureReel is a Manifest V3 Chrome extension for controlling short-form video f
 
 ## Architecture
 
-- `manifest.json`: MV3 permissions, content-script entry points, and popup registration.
-- `background/service-worker.js`: installs default settings and relays extension messages.
-- `content/platformDetector.js`: selects the platform adapter, binds the active video, and owns navigation locks.
-- `content/youtube.js`, `content/instagram.js`, `content/facebook.js`: platform-specific video and next-item behavior.
-- `gesture/camera.js`: explicit camera lifecycle, preview, 10 FPS processing loop, and cleanup.
+- `manifest.json`: MV3 permissions, content-script entry points, alarms, and popup registration.
+- `background/service-worker.js`: installs default settings, manages retention cleanup alarms, and relays messages.
+- `analytics/`:
+  - `retentionManager.js`: manages local calendar dates (`YYYY-MM-DD`) and purges records older than yesterday.
+  - `dailyAggregator.js`: aggregates viewing counts, active viewing durations, and per-platform statistics.
+  - `sessionManager.js`: tracks individual viewing session lifecycles, active intervals, and playback/visibility states.
+  - `analyticsTracker.js`: in-page client monitoring media events, visibility transitions, and auto-syncing intervals.
+- `content/platformDetector.js`: selects the platform adapter, binds the active video, coordinates analytics, and owns navigation locks.
+- `content/youtube.js`, `content/instagram.js`, `content/facebook.js`: platform-specific video ID extraction, navigation, and playback rate behavior.
+- `gesture/camera.js`: explicit camera lifecycle, preview HUD, ~30 FPS processing loop, and cleanup.
 - `gesture/handTracker.js`: MediaPipe Hands integration and wrist landmark extraction.
-- `gesture/gestureDetector.js`: bounded multi-frame swipe classification.
-- `popup/`: settings UI and status display.
+- `gesture/gestureDetector.js`: geometric finger pose and gesture classifier.
+- `popup/`: segmented dark glassmorphism dashboard (Live Analytics & Controls).
 
 ## Technologies
 

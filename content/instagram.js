@@ -9,6 +9,33 @@ class InstagramController {
     );
   }
 
+  getVideoType() {
+    return 'reel';
+  }
+
+  getVideoId(video) {
+    const urlMatch = location.pathname.match(/\/(?:reel|reels|p)\/([a-zA-Z0-9_-]+)/);
+    if (urlMatch) return urlMatch[1];
+    const container = this.getReelContainer();
+    const link = container?.querySelector?.('a[href*="/reel/"], a[href*="/p/"]');
+    if (link) {
+      const match = link.getAttribute('href')?.match(/\/(?:reel|reels|p)\/([a-zA-Z0-9_-]+)/);
+      if (match) return match[1];
+    }
+    return video?.currentSrc || (video ? `ig_${video.duration}_${video.videoWidth}` : 'ig_reel');
+  }
+
+  getVideoTitle(video) {
+    const container = this.getReelContainer();
+    const textEl = container?.querySelector?.('h2, span._ap3a, div._a9zs, span.x193iq5w');
+    const text = textEl?.textContent?.trim();
+    if (text) return text.length > 50 ? `${text.slice(0, 47)}...` : text;
+    const authorEl = container?.querySelector?.('a.x1i10hfl[role="link"], span._aap6');
+    const author = authorEl?.textContent?.trim();
+    if (author) return `Reel by ${author}`;
+    return 'Instagram Reel';
+  }
+
   getVideo() {
     const videos = [...document.querySelectorAll('video')]
       .filter(video => !video.closest('#gesturereel-camera'))

@@ -6,6 +6,9 @@
     nextVideo() { return false; }
     prevVideo() { return false; }
     dislikeVideo() { return false; }
+    getVideoType() { return 'video'; }
+    getVideoId(video) { return video?.currentSrc || 'video'; }
+    getVideoTitle(video) { return document.title || 'Video'; }
   }
 
   const controllers = [new YouTubeController(), new InstagramController(), new FacebookController()];
@@ -39,7 +42,14 @@
   function bindVideo() {
     if (!refreshController()) return;
     const candidate = controller.getVideo();
-    if (!candidate || candidate === video) return;
+    if (!candidate) return;
+
+    // Notify live analytics tracker
+    if (globalThis.GestureReelTracker) {
+      globalThis.GestureReelTracker.onVideoChanged(controller, candidate);
+    }
+
+    if (candidate === video) return;
     video = candidate;
     handledVideo = null;
     handledMediaKey = '';
@@ -317,6 +327,11 @@
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'SETTINGS_CHANGED') applySettings(message.settings);
     if (message.type === 'GET_STATUS') sendResponse(status());
+    if (message.type === 'GET_LIVE_TRACKING') {
+      const activeSession = globalThis.GestureReelTracker?.session?.getCurrentSession() || null;
+      sendResponse({ activeSession, status: status() });
+      return true;
+    }
     if (message.type === 'NEXT_REEL') advance('popup');
     if (message.type === 'PREV_REEL') retreat('popup');
     if (message.type === 'LIKE_REEL') like('popup');

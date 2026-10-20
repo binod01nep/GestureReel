@@ -8,6 +8,27 @@ class FacebookController {
     );
   }
 
+  getVideoType() {
+    return location.pathname.includes('/watch') && !location.pathname.includes('/reel') ? 'video' : 'reel';
+  }
+
+  getVideoId(video) {
+    const urlMatch = location.pathname.match(/\/(?:reel|reels)\/([0-9a-zA-Z_-]+)/) || location.search.match(/[?&]v=([0-9]+)/);
+    if (urlMatch) return urlMatch[1];
+    const container = this.getReelContainer();
+    const id = container?.getAttribute?.('data-video-id') || container?.querySelector?.('a[href*="/reel/"]')?.href?.match(/\/(?:reel|reels)\/([0-9a-zA-Z_-]+)/)?.[1];
+    if (id) return id;
+    return video?.currentSrc || (video ? `fb_${video.duration}_${video.videoWidth}` : 'fb_reel');
+  }
+
+  getVideoTitle(video) {
+    const container = this.getReelContainer();
+    const textEl = container?.querySelector?.('span[dir="auto"], h2, div[data-ad-preview="message"]');
+    const text = textEl?.textContent?.trim();
+    if (text) return text.length > 50 ? `${text.slice(0, 47)}...` : text;
+    return this.getVideoType() === 'reel' ? 'Facebook Reel' : 'Facebook Video';
+  }
+
   getVideo() {
     const videos = [...document.querySelectorAll('video')]
       .filter(video => !video.closest('#gesturereel-camera'))

@@ -4,6 +4,41 @@ class YouTubeController {
   isShorts() { return location.hostname.endsWith('youtube.com') && (location.pathname.startsWith('/shorts/') || location.pathname.includes('/shorts')); }
   isRegularVideo() { return location.hostname.endsWith('youtube.com') && !this.isShorts(); }
 
+  getVideoType() {
+    return this.isShorts() ? 'reel' : 'video';
+  }
+
+  getVideoId(video) {
+    if (this.isShorts()) {
+      const match = location.pathname.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
+      if (match) return match[1];
+      const activeRenderer = this.getActiveRenderer();
+      const id = activeRenderer?.getAttribute('id') || activeRenderer?.querySelector('a[href*="/shorts/"]')?.href?.match(/\/shorts\/([a-zA-Z0-9_-]+)/)?.[1];
+      if (id) return id;
+    } else {
+      const vParam = new URLSearchParams(location.search).get('v');
+      if (vParam) return vParam;
+      const match = location.pathname.match(/\/watch\/([a-zA-Z0-9_-]+)/);
+      if (match) return match[1];
+    }
+    return video?.currentSrc || (video ? `yt_${video.duration}_${video.videoWidth}` : 'yt_video');
+  }
+
+  getVideoTitle(video) {
+    if (this.isShorts()) {
+      const activeRenderer = this.getActiveRenderer();
+      const titleEl = activeRenderer?.querySelector('h2.title, .title.ytd-reel-player-header-renderer, #headline, yt-formatted-string.title');
+      const text = titleEl?.textContent?.trim();
+      if (text) return text;
+    } else {
+      const titleEl = document.querySelector('h1.ytd-watch-metadata yt-formatted-string, #title h1, h1.title');
+      const text = titleEl?.textContent?.trim();
+      if (text) return text;
+    }
+    const cleanDocTitle = document.title?.replace(' - YouTube', '')?.trim();
+    return cleanDocTitle || (this.isShorts() ? 'YouTube Short' : 'YouTube Video');
+  }
+
   getActiveRenderer() {
     if (!this.isShorts()) return null;
     return document.querySelector('ytd-reel-video-renderer[is-active]') ||

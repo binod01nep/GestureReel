@@ -1,3 +1,5 @@
+importScripts('../analytics/retentionManager.js', '../analytics/dailyAggregator.js');
+
 const DEFAULTS = {
   gestureEnabled: false,
   autoNext: true,
@@ -9,6 +11,19 @@ const DEFAULTS = {
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.set(DEFAULTS);
+  GestureReelRetention.setupAlarm();
+  GestureReelRetention.cleanupOldRecords();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  GestureReelRetention.setupAlarm();
+  GestureReelRetention.cleanupOldRecords();
+});
+
+chrome.alarms?.onAlarm?.addListener(alarm => {
+  if (alarm.name === 'gesturereel_retention_alarm') {
+    GestureReelRetention.cleanupOldRecords();
+  }
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -21,6 +36,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'GET_ACTIVE_TAB') {
     chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
       sendResponse({ tabId: tab?.id, url: tab?.url || '' });
+    });
+    return true;
+  }
+  if (message.type === 'GET_ANALYTICS_DATA') {
+    GestureReelDailyAggregator.getDashboardData().then(data => {
+      sendResponse(data);
+    }).catch(err => {
+      sendResponse({ error: err.message });
     });
     return true;
   }

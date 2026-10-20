@@ -23,73 +23,251 @@
       </div>
       <div class="brand-text">
         <h1>GestureReel</h1>
-        <p>Natural gesture control</p>
+        <p>Live Video Tracker & Gestures</p>
       </div>
     </header>
 
-    <section class="status-panel glass-card">
-      <div class="status-info">
-        <span class="eyebrow">CURRENT PLATFORM</span>
-        <strong id="platform">Checking tab...</strong>
-      </div>
-      <span id="support" class="pill">Detecting</span>
-    </section>
+    <!-- Navigation Segments -->
+    <nav class="segmented-control" role="tablist">
+      <button id="tabBtnAnalytics" class="seg-btn active" role="tab" aria-selected="true" aria-controls="viewAnalytics">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        <span>Analytics</span>
+      </button>
+      <button id="tabBtnControls" class="seg-btn" role="tab" aria-selected="false" aria-controls="viewControls">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span>Controls</span>
+      </button>
+    </nav>
 
-    <section class="control-list glass-card">
-      <label class="control-row">
-        <div class="control-info">
-          <strong>Gesture control</strong>
-          <small>✌️ 2x speed / next • ☝️ 1x speed / pause • 👍 like</small>
-        </div>
-        <input id="gestureEnabled" type="checkbox">
-        <span class="toggle"></span>
-      </label>
-      <label class="control-row">
-        <div class="control-info">
-          <strong>Auto next</strong>
-          <small>Always advance when a reel ends</small>
-        </div>
-        <input id="autoNext" type="checkbox" checked disabled>
-        <span class="toggle"></span>
-      </label>
-    </section>
-
-    <section class="camera-card glass-card">
-      <div class="camera-info">
-        <span class="eyebrow">CAMERA</span>
-        <strong id="cameraState">Disabled</strong>
-        <small id="cameraNote">Processed 100% locally on this device.</small>
-      </div>
-      <span id="cameraDot" class="camera-dot"></span>
-    </section>
-
-    <section class="gesture-card glass-card">
-      <div class="gesture-visual">
-        <div class="gesture-item"><span>✌️</span><b>Two fingers</b><small>2x speed (video) / next</small></div>
-        <div class="gesture-item"><span>☝️</span><b>One finger</b><small>1x speed (video) / play</small></div>
-        <div class="gesture-item"><span>👍</span><b>Thumbs up</b><small>like</small></div>
-        <div class="gesture-item"><span>👎</span><b>Thumbs down</b><small>dislike</small></div>
-      </div>
-      <div class="settings">
-        <div class="slider-group">
-          <div class="slider-header">
-            <label for="sensitivity">Sensitivity</label>
-            <output id="sensitivityValue">50</output>
+    <!-- TAB 1: LIVE ANALYTICS DASHBOARD -->
+    <div id="viewAnalytics" class="tab-view active">
+      <!-- Section C: Live Tracking -->
+      <section class="live-card glass-card">
+        <div class="live-header">
+          <div class="live-status-pill">
+            <span id="liveDot" class="live-pulse-dot off"></span>
+            <span id="liveStatusText">Unsupported tab</span>
           </div>
-          <input id="sensitivity" type="range" min="1" max="100" value="50">
+          <span id="liveCategoryBadge" class="cat-pill">Idle</span>
         </div>
-        <div class="slider-group">
-          <div class="slider-header">
-            <label for="cooldown">Cooldown</label>
-            <output id="cooldownValue">1.2s</output>
+
+        <div class="live-info">
+          <span id="livePlatformLabel" class="eyebrow">CURRENT VIDEO</span>
+          <strong id="liveVideoTitle" class="live-title">No video currently playing</strong>
+        </div>
+
+        <div class="live-metrics">
+          <div class="live-metric-box">
+            <span class="m-label">SESSION TIME</span>
+            <strong id="liveSessionDuration" class="m-val time">00:00</strong>
           </div>
-          <input id="cooldown" type="range" min="400" max="3000" step="100" value="1200">
+          <div class="live-metric-box">
+            <span class="m-label">TODAY'S REELS</span>
+            <strong id="liveReelsCounter" class="m-val">0</strong>
+          </div>
+          <div class="live-metric-box">
+            <span class="m-label">TODAY'S VIDEOS</span>
+            <strong id="liveVideosCounter" class="m-val">0</strong>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <!-- Section A: Today's Activity -->
+      <section class="stats-card glass-card">
+        <div class="card-top">
+          <span class="eyebrow">TODAY'S ACTIVITY</span>
+          <span id="todayDatePill" class="date-tag">Today</span>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-box">
+            <span class="box-label">TOTAL VIEWED</span>
+            <strong id="todayTotalCount" class="box-val">0</strong>
+            <small class="box-sub">distinct sessions</small>
+          </div>
+          <div class="summary-box">
+            <span class="box-label">ACTIVE TIME</span>
+            <strong id="todayTotalDuration" class="box-val time">00:00</strong>
+            <small class="box-sub">focused watching</small>
+          </div>
+        </div>
+
+        <div class="split-grid">
+          <div class="split-item">
+            <div class="split-head">
+              <span>📱</span>
+              <b>Reels / Shorts</b>
+            </div>
+            <div class="split-row">
+              <span id="todayReelsCount">0 watched</span>
+              <strong id="todayReelsDuration">00:00</strong>
+            </div>
+          </div>
+          <div class="split-item">
+            <div class="split-head">
+              <span>🎬</span>
+              <b>Regular Videos</b>
+            </div>
+            <div class="split-row">
+              <span id="todayVideosCount">0 watched</span>
+              <strong id="todayVideosDuration">00:00</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section B: Yesterday's Activity -->
+      <section class="stats-card glass-card">
+        <div class="card-top">
+          <span class="eyebrow">YESTERDAY'S ACTIVITY</span>
+          <span id="yesterdayDatePill" class="date-tag muted">Yesterday</span>
+        </div>
+
+        <div class="yesterday-row">
+          <div class="y-cell">
+            <span class="y-label">TOTAL</span>
+            <strong id="yesterdayTotalCount">0</strong>
+          </div>
+          <div class="y-cell">
+            <span class="y-label">ACTIVE TIME</span>
+            <strong id="yesterdayTotalDuration" class="time">00:00</strong>
+          </div>
+          <div class="y-cell">
+            <span class="y-label">REELS</span>
+            <strong id="yesterdayReelsStat">0 <small>(00:00)</small></strong>
+          </div>
+          <div class="y-cell">
+            <span class="y-label">VIDEOS</span>
+            <strong id="yesterdayVideosStat">0 <small>(00:00)</small></strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section D: Platform Breakdown -->
+      <section class="breakdown-card glass-card">
+        <div class="card-top">
+          <span class="eyebrow">PLATFORM BREAKDOWN (TODAY)</span>
+        </div>
+
+        <div class="platform-list">
+          <div class="platform-item" id="rowYTShorts">
+            <div class="plat-header">
+              <span class="plat-name"><span class="plat-dot yt"></span>YouTube Shorts</span>
+              <span class="plat-stats" id="statsYTShorts">0 viewed • 00:00</span>
+            </div>
+            <div class="progress-bar"><div id="barYTShorts" class="progress-fill yt" style="width: 0%"></div></div>
+          </div>
+
+          <div class="platform-item" id="rowYTVideo">
+            <div class="plat-header">
+              <span class="plat-name"><span class="plat-dot ytv"></span>YouTube Video</span>
+              <span class="plat-stats" id="statsYTVideo">0 viewed • 00:00</span>
+            </div>
+            <div class="progress-bar"><div id="barYTVideo" class="progress-fill ytv" style="width: 0%"></div></div>
+          </div>
+
+          <div class="platform-item" id="rowIGReels">
+            <div class="plat-header">
+              <span class="plat-name"><span class="plat-dot ig"></span>Instagram Reels</span>
+              <span class="plat-stats" id="statsIGReels">0 viewed • 00:00</span>
+            </div>
+            <div class="progress-bar"><div id="barIGReels" class="progress-fill ig" style="width: 0%"></div></div>
+          </div>
+
+          <div class="platform-item" id="rowFBReels">
+            <div class="plat-header">
+              <span class="plat-name"><span class="plat-dot fb"></span>Facebook Reels</span>
+              <span class="plat-stats" id="statsFBReels">0 viewed • 00:00</span>
+            </div>
+            <div class="progress-bar"><div id="barFBReels" class="progress-fill fb" style="width: 0%"></div></div>
+          </div>
+        </div>
+
+        <div id="analyticsEmptyState" class="empty-state" style="display: none;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <p>No videos tracked yet today.<br>Watch a reel on YouTube, Instagram, or Facebook to see live stats.</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 2: CONTROLS & GESTURES (Preserving existing features) -->
+    <div id="viewControls" class="tab-view">
+      <section class="status-panel glass-card">
+        <div class="status-info">
+          <span class="eyebrow">CURRENT PLATFORM</span>
+          <strong id="platform">Checking tab...</strong>
+        </div>
+        <span id="support" class="pill">Detecting</span>
+      </section>
+
+      <section class="control-list glass-card">
+        <label class="control-row">
+          <div class="control-info">
+            <strong>Gesture control</strong>
+            <small>✌️ 2x speed / next • ☝️ 1x speed / pause • 👍 like</small>
+          </div>
+          <input id="gestureEnabled" type="checkbox">
+          <span class="toggle"></span>
+        </label>
+        <label class="control-row">
+          <div class="control-info">
+            <strong>Auto next</strong>
+            <small>Always advance when a reel ends</small>
+          </div>
+          <input id="autoNext" type="checkbox" checked disabled>
+          <span class="toggle"></span>
+        </label>
+      </section>
+
+      <section class="camera-card glass-card">
+        <div class="camera-info">
+          <span class="eyebrow">CAMERA</span>
+          <strong id="cameraState">Disabled</strong>
+          <small id="cameraNote">Processed 100% locally on this device.</small>
+        </div>
+        <span id="cameraDot" class="camera-dot"></span>
+      </section>
+
+      <section class="gesture-card glass-card">
+        <div class="gesture-visual">
+          <div class="gesture-item"><span>✌️</span><b>Two fingers</b><small>2x speed (video) / next</small></div>
+          <div class="gesture-item"><span>☝️</span><b>One finger</b><small>1x speed (video) / play</small></div>
+          <div class="gesture-item"><span>👍</span><b>Thumbs up</b><small>like</small></div>
+          <div class="gesture-item"><span>👎</span><b>Thumbs down</b><small>dislike</small></div>
+        </div>
+        <div class="settings">
+          <div class="slider-group">
+            <div class="slider-header">
+              <label for="sensitivity">Sensitivity</label>
+              <output id="sensitivityValue">50</output>
+            </div>
+            <input id="sensitivity" type="range" min="1" max="100" value="50">
+          </div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <label for="cooldown">Cooldown</label>
+              <output id="cooldownValue">1.2s</output>
+            </div>
+            <input id="cooldown" type="range" min="400" max="3000" step="100" value="1200">
+          </div>
+        </div>
+      </section>
+    </div>
 
     <p id="message" class="message" role="status"></p>
   </main>
+
+  <script src="../analytics/retentionManager.js"></script>
+  <script src="../analytics/dailyAggregator.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
